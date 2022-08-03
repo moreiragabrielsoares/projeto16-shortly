@@ -1,7 +1,10 @@
 import bcrypt from 'bcrypt';
 import joi from 'joi';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 import { db } from '../databases/postgreSQL.js';
+
+dotenv.config();
 
 export async function signUpUser(req, res) {
 
@@ -54,7 +57,7 @@ export async function signUpUser(req, res) {
         const encryptedPassword = bcrypt.hashSync(newUser.password, 10);
         
         await db.query(`
-            INSERT INTO users (name, email, password) 
+            INSERT INTO users ("name", "email", "password") 
             VALUES ($1, $2, $3)`, 
             [newUser.name, newUser.email, encryptedPassword]
         );
@@ -68,9 +71,58 @@ export async function signUpUser(req, res) {
 
 export async function signInUser(req, res) {
 
+    const user = req.body;
+
+    const userSchema = joi.object({
+        email: joi.string().email().required(),
+        password: joi.string().required()
+    });
+
+    const { error } = userSchema.validate(user, { abortEarly: false });
+
+    if (error) {
+        
+        let msgError = "";
+
+        for (let i = 0 ; i < error.details.length ; i ++) {
+            msgError += error.details[i].message;
+            msgError += '/';
+        }
+
+        res.status(422).send(msgError);
+        return;
+    }
+
     try {
 
-        res.status(200).send('Test POST signInUser');
+        const { rows: userDB } = await db.query(`
+            SELECT * FROM users
+            WHERE users."email" = $1`,
+            [user.email]
+        );
+
+        if (userDB.length !== 0 && bcrypt.compareSync(user.password, userDB[0].password)) {
+
+            const TIME_ONE_DAY_SEC = 60*60*24;
+
+            const jwtData = { userId: userDB[0].id };
+            const jwtKey = process.env.JWT_KEY;
+            const jwtConfig = { expiresIn: TIME_ONE_DAY_SEC };
+            const token = jwt.sign(jwtData, jwtKey, jwtConfig); 
+
+            await db.query(`
+                INSERT INTO "users_sessions" ("userId", "token") 
+                VALUES ($1, $2)`, 
+                [userDB[0].id, token]
+            );
+
+            res.status(200).send({ token });
+            return;
+
+        } else {
+            res.status(401).send('Invalid credentials');
+            return;
+        }
 
     } catch (error) {
         res.sendStatus(500);
