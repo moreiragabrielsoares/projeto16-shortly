@@ -24,22 +24,6 @@ async function validateUser (req, res, next) {
         return;
     }
 
-    const urlSchema = joi.object({
-        url: joi.string().uri().pattern(/^https?:\/\//).required()
-    });
-
-    const { error } = urlSchema.validate(newUrl, { abortEarly: false });
-
-    if (error) {
-        let msgError = "";
-        for (let i = 0 ; i < error.details.length ; i ++) {
-            msgError += error.details[i].message;
-            msgError += '/';
-        }
-        res.status(422).send(msgError);
-        return;
-    }
-
     try {
         const jwtData = jwt.verify(token, jwtKey);
         res.locals.session = jwtData;
