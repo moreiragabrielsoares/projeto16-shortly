@@ -107,9 +107,40 @@ export async function openShortUrl(req, res) {
 
 export async function deleteShortUrlById(req, res) {
     
+    const userId = parseInt(res.locals.session.userId);
+    const urlId = parseInt(req.params.id);
+    
     try {
 
-        res.status(200).send('Test DELETE deleteShortUrlById');
+        const { rows: url } = await db.query(`
+            SELECT "id", "shortUrl", "url" 
+            FROM "urls" 
+            WHERE "id" = $1`, 
+            [urlId]
+        );
+
+        if(url.length === 0) {
+            res.sendStatus(404);
+            return;
+        }
+
+        const { rows: urlUserId } = await db.query(`
+            SELECT "userId" 
+            FROM "users_urls" 
+            WHERE "urlId" = $1`, 
+            [urlId]
+        );
+        
+        if (userId !== urlUserId[0].userId) {
+            res.sendStatus(404);
+            return;
+        }
+
+        await db.query(`DELETE FROM "users_urls" WHERE "urlId" = $1`, [urlId]);
+
+        await db.query(`DELETE FROM urls WHERE id = $1`, [urlId]);
+
+        res.sendStatus(204);
 
     } catch (error) {
         res.sendStatus(500);
