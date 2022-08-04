@@ -51,9 +51,23 @@ export async function shortUrls(req, res) {
 
 export async function getShortUrlById(req, res) {
     
+    const urlId = parseInt(req.params.id);
+
     try {
 
-        res.status(200).send('Test GET shortUrlById');
+        const { rows: url } = await db.query(`
+            SELECT "id", "shortUrl", "url" 
+            FROM "urls" 
+            WHERE "id" = $1`, 
+            [urlId]
+        );
+
+        if(url.length === 0) {
+            res.sendStatus(404);
+            return;
+        }
+
+        res.status(200).send(url[0]);
 
     } catch (error) {
         res.sendStatus(500);
