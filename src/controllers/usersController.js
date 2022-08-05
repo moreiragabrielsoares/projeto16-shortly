@@ -8,21 +8,21 @@ export async function getUserUrls(req, res) {
     try {
 
         const {rows: userUrls} = await db.query(`
-            SELECT us."id", us."name", SUM(ur."visitCount") AS "visitCount", 
+            SELECT us."id", us."name", COALESCE(SUM(ur."visitCount"), 0) AS "visitCount", 
                 (
                     SELECT JSON_AGG(ROW_TO_JSON(t)) 
                     FROM (
                         SELECT ur."id", ur."shortUrl", ur."url", ur."visitCount" 
                         FROM "urls" ur 
-                        JOIN "users_urls" ON "users_urls"."urlId" = ur."id"
-                        JOIN users us ON us."id" = "users_urls"."userId"
-                        WHERE us."id" = $1
+                        LEFT JOIN "users_urls" ON "users_urls"."urlId" = ur."id"
+                        LEFT JOIN users us ON us."id" = "users_urls"."userId"
+                        WHERE us."id" = 1
                     ) t
                 ) AS "shortenedUrls"
             FROM "users" us
-            JOIN "users_urls" ON us."id" = "users_urls"."userId"
-            JOIN "urls" ur ON "users_urls"."urlId" = ur."id"
-            WHERE us."id" = $1 
+            LEFT JOIN "users_urls" ON us."id" = "users_urls"."userId"
+            LEFT JOIN "urls" ur ON "users_urls"."urlId" = ur."id"
+            WHERE us."id" = 1 
             GROUP BY us."id";`,
             [userId]
         );
