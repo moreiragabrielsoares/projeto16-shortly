@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-import joi from 'joi';
 import dotenv from 'dotenv';
 import { db } from '../databases/postgreSQL.js';
 
@@ -9,7 +8,6 @@ async function validateUser (req, res, next) {
 
     const { authorization } = req.headers;
     const token = authorization?.replace('Bearer ', '');
-    const newUrl = req.body;
     const jwtKey = process.env.JWT_KEY;
 
     if (!token) {
@@ -19,6 +17,18 @@ async function validateUser (req, res, next) {
 
     try {
         const jwtData = jwt.verify(token, jwtKey);
+        
+        const { rows: tokenDB } = await db.query(`
+            SELECT * FROM "users_sessions"
+            WHERE "token" = $1`,
+            [token]
+        );
+
+        if (tokenDB.length === 0) {
+            res.status(401).send('Invalid header');
+            return;
+        }
+
     } catch (error) {
         res.status(401).send('Invalid header');
         return;
