@@ -16,13 +16,13 @@ export async function getUserUrls(req, res) {
                         FROM "urls" ur 
                         LEFT JOIN "users_urls" ON "users_urls"."urlId" = ur."id"
                         LEFT JOIN users us ON us."id" = "users_urls"."userId"
-                        WHERE us."id" = 1
+                        WHERE us."id" = $1
                     ) t
                 ) AS "shortenedUrls"
             FROM "users" us
             LEFT JOIN "users_urls" ON us."id" = "users_urls"."userId"
             LEFT JOIN "urls" ur ON "users_urls"."urlId" = ur."id"
-            WHERE us."id" = 1 
+            WHERE us."id" = $1 
             GROUP BY us."id";`,
             [userId]
         );
