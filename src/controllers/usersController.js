@@ -8,7 +8,7 @@ export async function getUserUrls(req, res) {
     try {
 
         const {rows: userUrls} = await db.query(`
-            SELECT us."id", us."name", COALESCE(SUM(ur."visitCount"), 0) AS "visitCount", 
+            SELECT us."id", us."name", COALESCE(SUM(ur."visitCount")::int, 0) AS "visitCount", 
                 (
                     SELECT JSON_AGG(ROW_TO_JSON(t)) 
                     FROM (

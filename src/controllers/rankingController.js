@@ -5,7 +5,7 @@ export async function getRanking(req, res) {
     try {
 
         const { rows: ranking } = await db.query(`
-            SELECT us."id", us."name", COUNT(uu."id") AS "linksCount", COALESCE(SUM(ur."visitCount"), 0) AS "visitCount"
+            SELECT us."id", us."name", COUNT(uu."id")::int AS "linksCount", COALESCE(SUM(ur."visitCount")::int, 0) AS "visitCount"
             FROM "users" us
             LEFT JOIN "users_urls" uu ON uu."userId" = us."id"
             LEFT JOIN "urls" ur ON ur."id" = uu."urlId"
