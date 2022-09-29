@@ -9,7 +9,6 @@ import rankingRouter from './routes/rankingRouter.js';
 dotenv.config();
 
 const app = express();
-
 app.use(express.json());
 app.use(cors());
 
@@ -18,5 +17,6 @@ app.use(linksRouter);
 app.use(usersRouter);
 app.use(rankingRouter);
 
+//testing partial commit in github desktop
 const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
